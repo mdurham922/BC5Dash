@@ -18,7 +18,6 @@ path = 'https://raw.githubusercontent.com/nalpalhao/DV_Practival/master/datasets
 
 df_salary = pd.read_csv(os.getcwd() + '/df_salary.csv')
 df_company = pd.read_csv(os.getcwd() + '/df_company.csv')
-df_curr = pd.read_csv("sol.csv")
 # ==========================================PreProcess==========================================#
 
 mean_salary = df_salary.groupby(['State'])[['totalyearlycompensation', 'costIndex', 'averageIncome']].mean()
@@ -153,14 +152,14 @@ app.layout = html.Div(
     [
         html.Div(
             [
-                html.P('Cryptocoin Dashboard',
+                html.P('Job Situation of Software Engineers in the US',
                        style={"font-weight": "bold",
                               "font-size": 24,
                               "text-align": "center",
                               "margin-bottom": "10px"}
                        ),
                 html.P(
-                    "Monitoring of selected cyrptoccoins and other assets for investment potential",
+                    "Analysis of a salary dataset scraped from Glassdoor covering the years 2017-2020",
                     style={"margin-top": "0px",
                            "font-size": 20,
                            "text-align": "center", }

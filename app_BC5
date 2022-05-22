@@ -1,0 +1,197 @@
+import dash
+import plotly
+from dash import dcc
+from dash import html
+from dash.dependencies import Input, Output
+from plotly.subplots import make_subplots
+import numpy as np
+import pandas as pd
+import plotly.graph_objs as go
+import os
+import dash_daq as daq
+import plotly.express as px
+import random
+
+# ==========================================Data==========================================#
+
+df_curr = pd.read_csv("sol.csv")
+
+# ==========================================PreProcess==========================================#
+mean_price = df_curr[['Open', 'Close', 'Volume']].mean()
+max_price = df_curr[['Open', 'Close', 'Volume']].max()
+min_price = df_curr[['Open', 'Close', 'Volume']].min()
+median_price = df_curr[['Open', 'Close', 'Volume']].median()
+df_bar = pd.concat([mean_price, max_price, min_price, median_price], axis=1).reset_index()
+df_bar.columns = [ 'Open', 'Close', 'Volume', 'Max', 'Min', 'Median']
+
+# ==========================================Interactive Components==========================================#
+states = ["Wisconsin","Minnesota"]
+sectors = ['Max', 'Min', 'Average', 'Median']
+years = list(range(2017, 2021))
+companys = ["Tesla","Walmart",'Amazon', 'eBay']
+
+state_options = [dict(label=state, value=state) for state in states]
+sector_options = [dict(label=sector, value=sector) for sector in sectors]
+company_options = [dict(label=company, value=company) for company in companys]
+
+# ===================Mean Max Min Median===================#
+dropdown_sector = dcc.Dropdown(
+    id='sector_option',
+    options=sector_options,
+    value=sectors[-1],
+    multi=False
+)
+
+# ===================States===================#
+dropdown_state = dcc.Dropdown(
+    id='state_option',
+    options=state_options,
+    value=states[0],
+    multi=True
+)
+
+# ===================Year Slider===================#
+slider_year = dcc.Slider(
+    id='year_slider',
+    min=2017,
+    max=2020,
+    marks={str(i): '{}'.format(str(i)) for i in years},
+    value=2020,
+    step=1
+)
+
+# ===================Show costIndex===================#
+radio_costIndex = daq.ToggleSwitch(
+    id='costIndex',
+    value=False,
+    label='Show / Hide',
+    labelPosition='bottom'
+)
+
+# ===================Show avgIncome===================#
+radio_avgIncome = daq.ToggleSwitch(
+    id='avgIncome',
+    value=False,
+    label='Show / Hide',
+    labelPosition='bottom'
+)
+
+# ===================Company===================#
+dropdown_company = dcc.Dropdown(
+    id='company_option',
+    options=company_options,
+    value=['Amazon', 'eBay'],
+    multi=True
+)
+
+# ===================Pie===================#
+dropdown_pie = dcc.Dropdown(
+    id='pie_option',
+    options=["Gender", "Race", "Education", "Level of Experience"],
+    value="Gender",
+    multi=False
+)
+
+# ===================Box Vio===================#
+
+radio_box = daq.ToggleSwitch(
+    id='box-vio-switch',
+    value=False,
+    label='Violinplot / Boxplot',
+    labelPosition='bottom'
+)
+
+# ===================Hist===================#
+radio_note = daq.BooleanSwitch(
+    id='my-toggle-switch',
+    on=True,
+    label="Show Annotation",
+    labelPosition='bottom'
+),
+
+##################################################APP###################################################################
+
+app = dash.Dash(__name__)
+
+server = app.server
+
+app.layout = html.Div(
+
+)
+
+
+##################################################Callbacks Plots#####################################################
+
+@app.callback(
+    [
+        Output("bar_graph", "figure"),
+        Output("line_plot1", "figure"),
+        Output("line_plot2", "figure")
+
+    ],
+    [
+        Input("sector_option", "value")
+    ]
+)
+
+def plots(sector):
+
+    ############################################Bar Plot##########################################################
+    global fig_pie
+    bar_figure.add_trace(go.Bar(y=df_bar.sort_values([sector]).State,
+                                x=df_bar.sort_values([sector])['Open'],
+                                name='averageIncome',
+                                orientation='h',
+                                marker=dict(color='#3498DB'),
+                                opacity=0.6,
+                                hovertemplate='State: %{y}<br>' + 'State Average Income: %{x}'
+                                ),
+                            )
+    bar_figure.update_layout(barmode='overlay')
+    bar_figure.update_layout(margin={"r": 20, "t": 30, "l": 0, "b": 10},
+                                legend=dict(y=.0, x=.75),
+                                title=dict(text=sector + ' Salary of Software Engineers'),
+                                yaxis=dict(title='Salary'),
+                                showlegend=True,
+                                )
+    bar_figure.update_layout(width=600, height=600)
+
+    ############################################Line Chart######################################################
+    df1 = df_curr[["Date","Close","Open"]]
+
+    line_plot1 = px.line(df1[df1["Region"].isin(df1.Region.unique())],
+                         x="Date", y="Open",
+                         color="Red",
+                         title="Open Price",
+                         template='ggplot2')
+
+    line_plot2 = px.line(df2[df2["Region"].isin(df2.Region.unique())],
+                         x="Date", y="Close",
+                         color="Red",
+                         title="Close Price",
+                         template='ggplot2')
+
+    line_plot1.update_layout(width=600, height=450)
+    line_plot2.update_layout(width=600, height=450)
+
+    ############################################Return######################################################
+
+    return bar_figure, line_plot1, line_plot2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
