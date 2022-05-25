@@ -1,0 +1,31 @@
+dropdown_sector = dcc.Dropdown(
+    id='sector_option',
+    options=sector_options,
+    value=sectors[-1],
+    multi=False
+)
+
+
+app = dash.Dash(__name__)
+
+server = app.server
+
+app.layout = html.Div([
+    html.Div([
+        html.Label('Measure Choice'),
+        dropdown_sector,
+        html.Br(),
+        dcc.Graph(id="bar_graph")
+    ]),
+    html.Div([
+        dcc.Graph(id="line_plot1"),
+        dcc.Graph(id="line_plot2"),
+        html.Br(),
+        dcc.Graph(id="line_plot3"),
+        dcc.Graph(id="line_plot4"),
+        dcc.Graph(id="line_plot5"),
+        dcc.Graph(id="line_plot6"),
+
+    ])
+
+])

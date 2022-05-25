@@ -10,11 +10,15 @@ import plotly.graph_objs as go
 import os
 import dash_daq as daq
 import plotly.express as px
+import ta
 import random
+np.seterr(divide='ignore', invalid='ignore')
 
 # ==========================================Data==========================================#
 
-df_curr = pd.read_csv("sol.csv")
+df_curr=pd.read_csv('sol.csv', index_col=0)
+df_curr['Date'] = pd.to_datetime(df_curr['Date'], format='%Y-%m-%d')
+df_curr = ta.add_all_ta_features(df_curr, "Open", "High", "Low", "Close", "Volume", fillna=True)
 
 # ==========================================PreProcess==========================================#
 mean_price = df_curr[['Open', 'Close', 'Volume']].mean()
@@ -22,7 +26,7 @@ max_price = df_curr[['Open', 'Close', 'Volume']].max()
 min_price = df_curr[['Open', 'Close', 'Volume']].min()
 median_price = df_curr[['Open', 'Close', 'Volume']].median()
 df_bar = pd.concat([mean_price, max_price, min_price, median_price], axis=1).reset_index()
-df_bar.columns = [ 'Open', 'Close', 'Volume', 'Max', 'Min', 'Median']
+df_bar.columns = [ 'Measure', 'Mean', 'Max', 'Min', 'Median']
 
 # ==========================================Interactive Components==========================================#
 states = ["Wisconsin","Minnesota"]
@@ -35,6 +39,7 @@ sector_options = [dict(label=sector, value=sector) for sector in sectors]
 company_options = [dict(label=company, value=company) for company in companys]
 
 # ===================Mean Max Min Median===================#
+
 dropdown_sector = dcc.Dropdown(
     id='sector_option',
     options=sector_options,
@@ -110,23 +115,551 @@ radio_note = daq.BooleanSwitch(
 ),
 
 ##################################################APP###################################################################
+#dropdown_sector, bar_graph, line_plot1
 
 app = dash.Dash(__name__)
 
 server = app.server
 
 app.layout = html.Div(
+    [
+        html.Div(
+            [
+                html.P('Cryptocoin Dashboard',
+                       style={"font-weight": "bold",
+                              "font-size": 24,
+                              "text-align": "center",
+                              "margin-bottom": "10px"}
+                       ),
+                html.P(
+                    "Monitoring of selected cyrptoccoins and other assets for investment potential",
+                    style={"margin-top": "0px",
+                           "font-size": 20,
+                           "text-align": "center", }
+                ),
+            ],
+            id='headtitle',
+        ),
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.P(
+                                    'Are you looking for a job in Software Engineering? In this graph you can see the '
+                                    'df_salary split up by US-State. You have the option to select the maximum, '
+                                    'minimum, average or  median salary and put it into comparison to the Cost of '
+                                    'Living Index or State Average Income. Feel free to play with the different '
+                                    'options!',
+                                    style={"text-align": "justify",
+                                           'margin-left': '20px',
+                                           'margin-right': '20px',
+                                           "font-size": 14},
+                                ),
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            [
+                                                html.Label(
+                                                    'Salary',
+                                                    style={"font-weight": "bold",
+                                                           "font-size": 14}
+                                                ),
+                                                html.Br(),
+                                                dropdown_sector,
+                                            ],
+                                            id='dropdown',
+                                            style={"text-align": "justify",
+                                                   'margin': '5px',
+                                                   'width': '30%'},
+                                            # className='box'
+                                        ),
+                                        html.Div(
+                                            [
+                                                html.Div(
+                                                    [
+                                                        html.Label('Cost of Living Index',
+                                                                   style={"font-weight": "bold",
+                                                                          "font-size": 14}
+                                                                   ),
+                                                        radio_costIndex
+                                                    ],
+                                                    id='cost',
+                                                    style={"text-align": "center",
+                                                           'width': '50%'},
+                                                ),
 
+                                                html.Div(
+                                                    [
+                                                        html.Label('State Average Income',
+                                                                   style={"font-weight": "bold",
+                                                                          "font-size": 14}
+                                                                   ),
+                                                        radio_avgIncome
+                                                    ],
+                                                    id='income',
+                                                    style={"text-align": "center",
+                                                           'width': '50%'},
+                                                ),
+                                            ],
+                                            id='choose',
+                                            style={'display': 'flex',
+                                                   'margin': '5px',
+                                                   'width': '70%'},
+                                            # className='box'
+                                        )
+                                    ], id='drop and choose',
+                                    style={'display': 'flex',
+                                           'margin-left': '10px',
+                                           'margin-right': '10px'},
+                                    # className='box'
+                                ),
+                            ],
+                            id='subtitle1', className='box'),
+                        html.Div(
+                            [
+                                dcc.Graph(id='bar_graph'),
+                            ],
+                            id='barplot',
+                            # style={'height': '10%'},
+                            className='box'
+                        ),
+                    ],
+                    id='1st col',
+                    style={'width': '50%'}
+                ),
+
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.P(
+                                            'On the map you can see the salary by state in the US. Again you can use '
+                                            'the filter options on the left to select you desired configuration. '
+                                            'Additionally you can select the range of years on the slider below.',
+                                            style={"text-align": "justify",
+                                                   'margin-left': '20px',
+                                                   'margin-right': '20px',
+                                                   "font-size": 14}
+                                        ),
+                                    ], id='subtitle2'
+                                ),
+                                html.Div(
+                                    [
+                                        html.P('Year',
+                                               style={"font-weight": "bold",
+                                                      "text-align": "center"}),
+                                        slider_year
+                                    ],
+                                    id='year slider',
+                                    style={"margin-left": "10px",
+                                           "margin-right": "10px"},
+                                ), ]
+                        ),
+
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.H3(
+                                            "Maximum",
+                                            style={"text-align": "center",
+                                                   "font-weight": "bold"}
+                                        ),
+                                        html.P(
+                                            id="max_state",
+                                            style={"text-align": "center"}
+                                        ),
+                                        html.P(
+                                            id="max_value",
+                                            style={"text-align": "center"}
+                                        ),
+                                    ],
+                                    className="box",
+                                    style={"text-align": "center",
+                                           'border-radius': '10px',
+                                           'background-color': '#FAEBD7',
+                                           'margin': '10px',
+                                           'padding': '10px',
+                                           'box-shadow': '2px 2px 2px lightgrey',
+                                           'width': '50%'},
+                                    id="Highest",
+                                ),
+                                html.Div(
+                                    [
+                                        html.H3(
+                                            "Minimum",
+                                            style={"text-align": "center",
+                                                   "font-weight": "bold"}
+                                        ),
+                                        html.P(
+                                            id="min_state",
+                                            style={"text-align": "center"}
+                                        ),
+                                        html.P(
+                                            id="min_value",
+                                            style={"text-align": "center"}
+                                        ),
+                                    ],
+                                    style={"text-align": "center",
+                                           'border-radius': '10px',
+                                           'background-color': '#FAEBD7',
+                                           'margin': '10px',
+                                           'padding': '10px',
+                                           'box-shadow': '2px 2px 2px lightgrey',
+                                           'width': '50%'},
+                                    id="Lowest",
+                                ),
+                            ],
+                            id="info-container",
+                            style={"display": "flex"},
+                            # className="box"
+                        ),
+
+                        html.Div(
+                            [
+                                dcc.Graph(id='line_plot1'),
+                            ],
+                            id='Mapplot',
+                            # style={'width': '60%'},
+                            # className='box'
+                        ),
+                    ],
+                    id='2nd col',
+                    style={'width': '50%'},
+                    className='box'
+                ), ],
+            id='2nd row',
+            style={'display': 'flex'},
+            # className='box'
+        ),
+        html.Div(
+            [
+                html.P('Salary based on work experience by US region',
+                       style={"font-weight": "bold",
+                              "font-size": 24,
+                              "text-align": "center",
+                              'margin': '10px'}
+                       ),
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                dcc.Graph(id='line_plot2')
+                            ], style={'width': '50%'}
+                        ),
+                        html.Div(
+                            [
+                                dcc.Graph(id='line_plot3')
+                            ], style={'width': '50%'}
+                        ),
+                    ],
+                    id='line plots',
+                    style={'display': 'flex',
+                           'margin-left': '20px'}
+                )
+            ],
+            id='3rd row',
+            # style={'display': 'flex'},
+            className='box'
+        ),
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.P('Employee\'s satisfaction in different companies',
+                               style={"font-weight": "bold",
+                                      "font-size": 24,
+                                      "text-align": "center",
+                                      "margin-bottom": "10px"}
+                               ),
+                        html.Div(
+                            [
+                                html.P('Select companies',
+                                       style={"margin-bottom": "10px",
+                                              "margin-left": "10px"}),
+                                dropdown_company
+                            ],
+                            id='select company',
+                            style={"margin-right": "20px",
+                                   "margin-left": "20px"}
+                        ),
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        dcc.Graph(id='line_plot4')
+                                    ],
+                                    id='radarplot1',
+                                    style={'width': '50%'}
+                                    # className='box'
+                                ),
+                                html.Div(
+                                    [
+                                     #graph here
+                                    ],
+                                    id='radarplot2',
+                                    style={'width': '50%'}
+                                    # className='box'
+                                )
+                            ],
+                            id='radartplot',
+                            style={'display': 'flex',
+                                   "margin-right": "20px",
+                                   # "margin-left": "20px"
+                                   }
+                        )
+
+                    ],
+                    id='3rd row 1st row',
+                    # style={'width': '80%'},
+                    # className='box'
+                ),
+                html.Div(
+                    [
+                        html.P('Information about the selected Top Rated Company',
+                               style={"font-weight": "bold",
+                                      "font-size": 24,
+                                      "text-align": "center",
+                                      "margin-bottom": "10px"}
+                               ),
+                        html.Br(),
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        dcc.Graph(id='line_plot5')
+                                    ],
+                                    id='indicator plot',
+                                    style={'width': '25%'}
+                                ),
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            [
+                                                html.Div(
+                                                    [
+                                                        html.H3('Top Rated Company in Chosen'),
+                                                        html.P(id='Chosen companies'),
+                                                    ],
+                                                    id='company title',
+                                                    style={'width': '33%'},
+                                                    className='box_comment'
+                                                ),
+                                                html.Div(
+                                                    [
+                                                        html.H3('Interview Duration'),
+                                                        html.P(id='Interview Duration'),
+                                                    ], style={'width': '33%'},
+                                                    className='box_comment'
+                                                ),
+                                                html.Div(
+                                                    [
+                                                        html.H3('Interview Difficulty'),
+                                                        html.P(id='Interview Difficulty'),
+                                                    ], style={'width': '33%'},
+                                                    className='box_comment'
+                                                )
+                                            ],
+                                            id='431row',
+                                            style={'display': 'flex'},
+                                        ),
+                                        html.Div(
+                                            [
+
+                                                html.Div(
+                                                    [
+                                                        html.H3('Company Size'),
+                                                        html.P(id='Company Size'),
+                                                    ], style={'width': '33%'},
+                                                    className='box_comment'
+                                                ),
+                                                html.Div(
+                                                    [
+                                                        html.H3('Industry'),
+                                                        html.P(id='Industry'),
+                                                    ], style={'width': '33%'},
+                                                    className='box_comment'
+                                                ),
+                                                html.Div(
+                                                    [
+                                                        html.H3('Revenue Size'),
+                                                        html.P(id='Revenue Size'),
+                                                    ], style={'width': '33%'},
+                                                    className='box_comment'
+                                                )
+                                            ],
+                                            id='432row',
+                                            style={'display': 'flex'},
+                                        )
+                                    ],
+                                    id='box comments',
+                                    style={'width': '75%'},
+                                ),
+                            ], id='company indicator',
+                            style={'display': 'flex',
+                                   'margin-left': '50px',
+                                   'margin-right': '50px'},
+                        )
+                    ],
+                    id='3rd row 2nd row',
+                    # style={'display': 'flex'}
+                ),
+                dcc.Graph(id='line_plot6',
+                          style={"margin-right": "40px",
+                                 "margin-left": "40px"})
+            ], id='4th row',
+            # style={'display': 'flex'},
+            className='box'
+        ),
+        html.Div(
+            [
+                html.P('Salary based on sociodemographic factors',
+                       style={"font-weight": "bold",
+                              "font-size": 24,
+                              "text-align": "center",
+                              "margin-bottom": "10px",
+                              }
+                       ),
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        dropdown_pie,
+                                        #graph here
+                                        html.Div(
+                                            [
+                                                html.Div(
+                                                    radio_note,
+                                                    id='note switch',
+                                                    style={'width': '50%'}
+                                                ),
+                                                html.Div(
+                                                    [
+                                                        radio_box
+                                                    ],
+                                                    id='box switch',
+                                                    style={'width': '50%'}
+                                                ),
+                                            ], id='switches',
+                                            style={'display': 'flex'}
+                                        ),
+                                    ],
+                                    style={'width': '30%',
+                                           'margin': '20px',
+                                           "margin-left": "40px"
+                                           },
+                                    id='pie charts'
+                                ),
+                                html.Div(
+                                    [
+                                    #graph here
+                                    ],
+                                    style={'width': '70%'},
+                                    id='boxplot'
+                                ),
+                            ],
+                            id='5th row 1st row',
+                            style={'height': '40%',
+                                   'display': 'flex'}
+                        ),
+                        html.Div(
+                            [
+                             #graph here
+                            ],
+                            id='noteplot',
+                            style={'height': '60%'}, ),
+
+                    ],
+                    id='5th row fig',
+                    style={'height': '50%'}
+                )
+            ],
+            id='5th row',
+            # style={'display': 'flex'},
+            className='box'
+        ),
+        html.Div(
+            [
+                html.P('Gender-Salary Analysis',
+                       style={"font-weight": "bold",
+                              "font-size": 24,
+                              "text-align": "center",
+                              "margin-bottom": "10px",
+                              }
+                       ),
+                html.Br(),
+
+                html.Div([
+                    dcc.Tabs(id='tabs-example-1', value='Industry', children=[
+                        dcc.Tab(label='Industry', value='Industry'),
+                        dcc.Tab(label='State', value='State'),
+                        dcc.Tab(label='Company Size', value='Company Size')
+                    ]
+                             ),
+                    html.Div(id='tabs-example-content-1')
+                ],
+                    style={"margin-right": "40px",
+                           "margin-left": "40px"}
+                ),
+            ], id='6th row',
+            className='box'
+        ),
+        html.Div(
+            [
+                html.P('Authors',
+                       style={"font-weight": "bold",
+                              "font-size": 24,
+                              "text-align": "center",
+                              "margin-bottom": "10px",
+                              }
+                       ),
+                html.Div(
+                    [
+                        html.P('Renan Stoffel (m20210594)',
+                               style={'width': '25%',
+                                      "text-align": "center",
+                                      "font-size": 14}, ),
+                        html.P('Marcel Geller (m20210606)',
+                               style={'width': '25%',
+                                      "text-align": "center",
+                                      "font-size": 14}, ),
+                        html.P('Robin Schmidt (m20210602)',
+                               style={'width': '25%',
+                                      "text-align": "center",
+                                      "font-size": 14}, ),
+                        html.P('Qi Shi (m20210981)',
+                               style={'width': '25%',
+                                      "text-align": "center",
+                                      "font-size": 14}, ),
+                    ],
+                    style={'display': 'flex'},
+                    className='box'
+                ),
+            ],
+        )
+    ],
+    style={'background-color': '#f3f3f1',
+           "display": "flex",
+           "flex-direction": "column",
+           'padding': '50px'},
 )
-
-
 ##################################################Callbacks Plots#####################################################
 
 @app.callback(
     [
         Output("bar_graph", "figure"),
         Output("line_plot1", "figure"),
-        Output("line_plot2", "figure")
+        Output("line_plot2", "figure"),
+        Output("line_plot3", "figure"),
+        Output("line_plot4", "figure"),
+        Output("line_plot5", "figure"),
+        Output("line_plot6", "figure"),
 
     ],
     [
@@ -138,47 +671,127 @@ def plots(sector):
 
     ############################################Bar Plot##########################################################
     global fig_pie
-    bar_figure.add_trace(go.Bar(y=df_bar.sort_values([sector]).State,
-                                x=df_bar.sort_values([sector])['Open'],
-                                name='averageIncome',
-                                orientation='h',
-                                marker=dict(color='#3498DB'),
-                                opacity=0.6,
-                                hovertemplate='State: %{y}<br>' + 'State Average Income: %{x}'
-                                ),
-                            )
-    bar_figure.update_layout(barmode='overlay')
-    bar_figure.update_layout(margin={"r": 20, "t": 30, "l": 0, "b": 10},
-                                legend=dict(y=.0, x=.75),
-                                title=dict(text=sector + ' Salary of Software Engineers'),
-                                yaxis=dict(title='Salary'),
-                                showlegend=True,
-                                )
-    bar_figure.update_layout(width=600, height=600)
+
+    bar_figure = go.Figure(go.Bar(y=df_bar[sector].sort_values(),
+                                  name='test fig',
+                                  marker=dict(color='#3498DB'),
+                                  opacity=0.6,
+                                  hovertemplate='%{y}<br>' + ' %{x}'
+                                  ))
+
+    bar_figure.update_layout(title=dict(text='Mean Value of Coin', x=0.5, font=dict(family='Arial', size=18, color='#606060')),
+                             margin={"r": 20, "t": 30, "l": 0, "b": 10},
+                             legend=dict(y=.0, x=.75),
+                             yaxis=dict(title='Dollars'),
+                             showlegend=True,
+                             )
+    bar_figure.update_layout( height=450)
 
     ############################################Line Chart######################################################
-    df1 = df_curr[["Date","Close","Open"]]
+    df1 = df_curr[["Date", "Close", "Open"]]
 
-    line_plot1 = px.line(df1[df1["Region"].isin(df1.Region.unique())],
+    line_plot1 = px.line(df1,
                          x="Date", y="Open",
-                         color="Red",
                          title="Open Price",
                          template='ggplot2')
+    line_plot1.update_layout(height=450)
 
-    line_plot2 = px.line(df2[df2["Region"].isin(df2.Region.unique())],
+
+    line_plot2 = px.line(df1,
                          x="Date", y="Close",
-                         color="Red",
                          title="Close Price",
                          template='ggplot2')
+    line_plot2.update_layout( height=450)
 
-    line_plot1.update_layout(width=600, height=450)
-    line_plot2.update_layout(width=600, height=450)
+
+    line_plot3 = px.line(df1,
+                         x="Date", y="Close",
+                         title="Close Price",
+                         template='ggplot2')
+    line_plot3.update_layout(height=450)
+
+
+    line_plot4 = px.line(df1,
+                         x="Date", y="Close",
+                         title="Close Price",
+                         template='ggplot2')
+    line_plot4.update_layout( height=450)
+
+
+    line_plot5 = px.line(df1,
+                         x="Date", y="Close",
+                         title="Close Price",
+                         template='ggplot2')
+    line_plot5.update_layout(height=450)
+
+
+    line_plot6 = px.line(df1,
+                         x="Date", y="Close",
+                         title="Close Price",
+                         template='ggplot2')
+    line_plot6.update_layout( height=450)
+
 
     ############################################Return######################################################
 
-    return bar_figure, line_plot1, line_plot2
+    return bar_figure, line_plot1, line_plot2, line_plot3, line_plot4, line_plot5, line_plot6
 
+    ###############################################Callbacks Indicators#####################################################
 
+@app.callback(
+        [
+            Output("max_state", "children"),
+            Output("max_value", "children"),
+            Output("min_state", "children"),
+            Output("min_value", "children"),
+            Output('Chosen companies', 'children'),
+            Output("Interview Difficulty", "children"),
+            Output("Interview Duration", "children"),
+            Output('Company Size', 'children'),
+            Output('Industry', 'children'),
+            Output('Revenue Size', 'children')
+        ],
+        [
+            Input("sector_option", "value"),
+            Input("company_option", "value"),
+            Input('year_slider', 'value')
+        ]
+)
+
+def indicator(sector, cpys, year):
+
+    return str(sector), 'Test string2', cpys, \
+        'Year: ' + str(year), 'Chosen companies', \
+        str(4), str(5), str(66), str(576), str(2000)
+
+        ############################################Tabs######################################################
+
+@app.callback(
+    Output('tabs-example-content-1', 'children'),
+    Input('tabs-example-1', 'value')
+)
+def render_content(tab):
+    if tab == 'Industry':
+        return html.Div([
+            dcc.Graph(id='line_plot6',
+                      style={"margin-right": "40px",
+                             "margin-left": "40px"})
+        ])
+    elif tab == 'State':
+        return html.Div([
+            dcc.Graph(id='bar_figure',
+                      style={"margin-right": "40px",
+                             "margin-left": "40px"})
+        ])
+    elif tab == 'Company Size':
+        return html.Div([
+            dcc.Graph(id='line_plot4',
+                      style={"margin-right": "40px",
+                             "margin-left": "40px"})
+        ])
+
+if __name__ == '__main__':
+    app.run_server(debug=True)
 
 
 
